@@ -190,11 +190,30 @@ namespace OnlineBankingAzure
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum);
 
 
+                var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
+
+                decimal amount1 = System.Convert.ToDecimal(TextBox7.Text);
+                SqlCommand cmd2 = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
+
+                cmd2.Parameters.AddWithValue("@TransactionType", transactionType);
+                cmd2.Parameters.AddWithValue("@DateTime", DateTime.Now);
+                cmd2.Parameters.AddWithValue("@Amount", amount1);
+                cmd2.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
+
+                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+
+
+
+
+
+
                 Response.Write("<script>alert('Transfered done');</script>");
                 cmd3.ExecuteNonQuery();
                 cmd1.ExecuteNonQuery();
-                TransactionCheq();
+                cmd2.ExecuteNonQuery();
                 con.Close();
+
+                Response.Write("<script>alert('Details Updated');</script>");
 
                 getChequingAccountData();
                 getSavingsAccountData();
@@ -258,11 +277,30 @@ namespace OnlineBankingAzure
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum1);
 
 
+                var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
+
+                decimal amount2 = System.Convert.ToDecimal(TextBox7.Text);
+                SqlCommand cmd2 = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
+
+                cmd2.Parameters.AddWithValue("@TransactionType", transactionType);
+                cmd2.Parameters.AddWithValue("@DateTime", DateTime.Now);
+                cmd2.Parameters.AddWithValue("@Amount", amount2);
+                cmd2.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
+
+                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+
+
+
+
+
+
                 Response.Write("<script>alert('Transfered done');</script>");
                 cmd3.ExecuteNonQuery();
                 cmd1.ExecuteNonQuery();
-                TransactionSavings();
+                cmd2.ExecuteNonQuery();
                 con.Close();
+
+                Response.Write("<script>alert('Details Updated');</script>");
 
                 getChequingAccountData();
                 getSavingsAccountData();
@@ -279,6 +317,10 @@ namespace OnlineBankingAzure
 
             }
         }
+
+
+
+
 
 
 
