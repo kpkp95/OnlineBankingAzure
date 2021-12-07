@@ -49,6 +49,7 @@ namespace OnlineBankingAzure
 
                 SqlCommand cmd = new SqlCommand("INSERT INTO ServiceRequest(UserID,ServiceRequestType,ServiceRequestDescription) values(@UserID,@ServiceRequestType,@ServiceRequestDescription)", con);
 
+                
                 cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
                 cmd.Parameters.AddWithValue("@ServiceRequestType", DropDownList1.SelectedItem.Value);
 
