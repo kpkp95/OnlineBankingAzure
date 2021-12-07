@@ -26,15 +26,16 @@
                      </div>
                   </div>
                   <div class="row">
-                      <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString %>" SelectCommand="SELECT * FROM [BranchInfo]"></asp:SqlDataSource>
+                      <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString2 %>" SelectCommand="SELECT * FROM [BranchInfo]"></asp:SqlDataSource>
                      <div class="col">
-                        <asp:GridView class="table table-striped table-bordered" ID="GridView1" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1">
+                        <asp:GridView class="table table-striped table-bordered" ID="GridView1" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource2">
                             <Columns>
-                                <asp:DynamicField DataField="BranchID" HeaderText="Branch ID" />
-                                <asp:BoundField DataField="BranchName" HeaderText="Branch Name" SortExpression="BranchName" />
+                                <asp:BoundField DataField="BranchID" HeaderText="BranchID" SortExpression="BranchID" />
+                                <asp:BoundField DataField="BranchName" HeaderText="BranchName" SortExpression="BranchName" />
                                 <asp:BoundField DataField="City" HeaderText="City" SortExpression="City" />
                             </Columns>
                          </asp:GridView>
+                         <asp:SqlDataSource ID="SqlDataSource2" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString2 %>" SelectCommand="SELECT * FROM [BranchInfo]"></asp:SqlDataSource>
                      </div>
                   </div>
                </div>
