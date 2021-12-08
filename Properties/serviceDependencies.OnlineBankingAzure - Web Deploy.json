@@ -1,3 +1,10 @@
 {
-  "dependencies": {}
+  "dependencies": {
+    "mssql1": {
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/onlinebankingazure1dbserver/databases/BankingSystem",
+      "type": "mssql.azure",
+      "connectionId": "con",
+      "secretStore": "AzureAppSettings"
+    }
+  }
 }
