@@ -28,9 +28,9 @@
                   <div class="row">
                      <div class="col">
                          <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:BankingSystemConnectionString3 %>" SelectCommand="SELECT * FROM [BranchInfo]"></asp:SqlDataSource>
-                        <asp:GridView class="table table-striped table-bordered" ID="GridView1" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource2">
+                        <asp:GridView class="table table-striped table-bordered" ID="GridView1" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1" DataKeyNames="BranchID">
                             <Columns>
-                                <asp:BoundField DataField="BranchID" HeaderText="BranchID" SortExpression="BranchID" />
+                                <asp:BoundField DataField="BranchID" HeaderText="BranchID" SortExpression="BranchID" ReadOnly="True" />
                                 <asp:BoundField DataField="BranchName" HeaderText="BranchName" SortExpression="BranchName" />
                                 <asp:BoundField DataField="City" HeaderText="City" SortExpression="City" />
                             </Columns>
