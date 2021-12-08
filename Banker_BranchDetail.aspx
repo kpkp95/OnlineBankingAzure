@@ -35,7 +35,7 @@
                                 <asp:BoundField DataField="City" HeaderText="City" SortExpression="City" />
                             </Columns>
                          </asp:GridView>
-                         <asp:SqlDataSource ID="SqlDataSource2" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString2 %>" SelectCommand="SELECT * FROM [BranchInfo]"></asp:SqlDataSource>
+                         <asp:SqlDataSource ID="SqlDataSource2" runat="server" ConnectionString="<%$ ConnectionStrings:BankingSystemConnectionString %>" SelectCommand="SELECT * FROM [BranchInfo]"></asp:SqlDataSource>
                      </div>
                   </div>
                </div>

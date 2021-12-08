@@ -258,12 +258,12 @@
                    
 
                    <div class="row">
-                       <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString %>" SelectCommand="SELECT * FROM [CustomerDetail]"></asp:SqlDataSource>
+                       <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:BankingSystemConnectionString %>" SelectCommand="SELECT * FROM [CustomerDetail]"></asp:SqlDataSource>
                      <div class="col">
 
-                         <asp:GridView ID="GridView1" class="table table-striped table-bordered" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1">
+                         <asp:GridView ID="GridView1" class="table table-striped table-bordered" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1" DataKeyNames="UserID">
                              <Columns>
-                                 <asp:BoundField DataField="UserID" HeaderText="User ID" SortExpression="UserID" />
+                                 <asp:BoundField DataField="UserID" HeaderText="User ID" SortExpression="UserID" ReadOnly="True" />
                                  <asp:BoundField DataField="Name" HeaderText="Name" SortExpression="Name" />
                                  <asp:BoundField DataField="Address" HeaderText="Address" SortExpression="Address" />
                                  <asp:BoundField DataField="City" HeaderText="City" SortExpression="City" />

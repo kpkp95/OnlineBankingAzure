@@ -40,14 +40,14 @@
                      </div>
                   </div>
                   <div class="row">
-                      <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString %>" SelectCommand="SELECT TOP (1000) UserID, Name, Email, AccountStatus FROM CustomerDetail WHERE (AccountStatus = 'Inactive')"></asp:SqlDataSource>
+                      <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:BankingSystemConnectionString %>" SelectCommand="SELECT TOP (1000) UserID, Name, Email, AccountStatus FROM CustomerDetail WHERE (AccountStatus = 'Inactive')"></asp:SqlDataSource>
                      <div class="col">
-                        <asp:GridView class="table table-striped table-bordered" ID="GridView1" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1">
+                        <asp:GridView class="table table-striped table-bordered" ID="GridView1" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1" DataKeyNames="UserID">
                             <Columns>
-                                <asp:BoundField DataField="UserID" HeaderText="User ID" ReadOnly="True" SortExpression="UserID" />
+                                <asp:BoundField DataField="UserID" HeaderText="UserID" ReadOnly="True" SortExpression="UserID" />
                                 <asp:BoundField DataField="Name" HeaderText="Name" SortExpression="Name" />
                                 <asp:BoundField DataField="Email" HeaderText="Email" SortExpression="Email" />
-                                <asp:BoundField DataField="AccountStatus" HeaderText="Account Status" SortExpression="AccountStatus" />
+                                <asp:BoundField DataField="AccountStatus" HeaderText="AccountStatus" SortExpression="AccountStatus" />
                             </Columns>
                          </asp:GridView>
                      </div>

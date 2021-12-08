@@ -200,16 +200,16 @@
                    
 
                    <div class="row">
-                       <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString %>" SelectCommand="SELECT * FROM [ServiceRequest]"></asp:SqlDataSource>
+                       <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:BankingSystemConnectionString %>" SelectCommand="SELECT * FROM [ServiceRequest]"></asp:SqlDataSource>
                      <div class="col">
 
-                         <asp:GridView ID="GridView1" class="table table-striped table-bordered" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1">
+                         <asp:GridView ID="GridView1" class="table table-striped table-bordered" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1" DataKeyNames="ServiceRequestID">
                              <Columns>
-                                 <asp:BoundField DataField="ServiceRequestID" HeaderText="Service Request ID" SortExpression="ServiceRequestID" />
+                                 <asp:BoundField DataField="ServiceRequestID" HeaderText="ServiceRequest ID" SortExpression="ServiceRequestID" InsertVisible="False" ReadOnly="True" />
                                  <asp:BoundField DataField="UserID" HeaderText="User ID" SortExpression="UserID" />
-                                 <asp:BoundField DataField="ServiceRequestType" HeaderText="Service Type" SortExpression="ServiceRequestType" />
+                                 <asp:BoundField DataField="ServiceRequestType" HeaderText="ServiceRequest Type" SortExpression="ServiceRequestType" />
                                  <asp:BoundField DataField="ServiceRequestDescription" HeaderText="Description" SortExpression="ServiceRequestDescription" />
-                                 <asp:BoundField DataField="ServiceStatus" HeaderText="Status" SortExpression="ServiceStatus" />
+                                 <asp:BoundField DataField="ServiceStatus" HeaderText="Service Status" SortExpression="ServiceStatus" />
                              </Columns>
                          </asp:GridView>
                         

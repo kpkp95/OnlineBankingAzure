@@ -211,12 +211,12 @@
                    
 
                    <div class="row">
-                       <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:OnlineBankingAzure_db1ConnectionString %>" SelectCommand="SELECT * FROM [CreditCard]"></asp:SqlDataSource>
+                       <asp:SqlDataSource ID="SqlDataSource1" runat="server" ConnectionString="<%$ ConnectionStrings:BankingSystemConnectionString2 %>" SelectCommand="SELECT * FROM [CreditCard]"></asp:SqlDataSource>
                      <div class="col">
 
-                         <asp:GridView ID="GridView1" class="table table-striped table-bordered" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1">
+                         <asp:GridView ID="GridView1" class="table table-striped table-bordered" runat="server" AutoGenerateColumns="False" DataSourceID="SqlDataSource1" DataKeyNames="CreditCardNumber">
                              <Columns>
-                                 <asp:BoundField DataField="UserID" HeaderText="User ID" SortExpression="UserID" />
+                                  <asp:BoundField DataField="UserID" HeaderText="User ID" SortExpression="UserID" />
                                  <asp:BoundField DataField="CreditCardNumber" HeaderText="Card Number" ReadOnly="True" SortExpression="CreditCardNumber" />
                                  <asp:BoundField DataField="Limit" HeaderText="Limit" SortExpression="Limit" />
                                  <asp:BoundField DataField="ExpityDate" HeaderText="Expiry Date" SortExpression="ExpityDate" DataFormatString="{0:dd/MM/yyyy} " />
