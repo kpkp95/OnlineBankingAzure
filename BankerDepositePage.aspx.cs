@@ -27,7 +27,7 @@ namespace OnlineBankingAzure
         protected void Button2_Click(object sender, EventArgs e)
         {
             Deposit();
-            TransactionCheqToSav();
+            
         }
 
         void Deposit()
@@ -62,12 +62,31 @@ namespace OnlineBankingAzure
                 cmd1.Parameters.AddWithValue("@AccountBalance", sum);
 
 
+                var transactionType = "Deposit";
+
+
+                SqlCommand cmd2 = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
+
+                cmd2.Parameters.AddWithValue("@TransactionType", transactionType);
+                cmd2.Parameters.AddWithValue("@DateTime", DateTime.Now);
+                cmd2.Parameters.AddWithValue("@Amount", amount);
+                cmd2.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
+
+                cmd2.Parameters.AddWithValue("@UserID", TextBox3.Text.Trim());
 
 
 
+                cmd2.ExecuteNonQuery();
                 cmd1.ExecuteNonQuery();
 
+
+
+
+
+
                 con.Close();
+
+                Response.Write("<script>alert('Deposit done');</script>");
 
             }
             catch (Exception ex)
