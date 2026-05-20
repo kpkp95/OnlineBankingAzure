@@ -10,6 +10,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OnlineBankingAzure
 {
@@ -18,43 +19,50 @@ namespace OnlineBankingAzure
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
         protected void Page_Load(object sender, EventArgs e)
         {
-            try
+            if (!IsUserAuthenticated())
             {
-                if (Session["Username"].ToString() == "" || Session["Username"] == null)
-                {
-                    Response.Write("<script>alert('Session Expired Login Again');</script>");
-                    Response.Redirect("LoginPage.aspx");
-                }
-                else
-                {
-
-
-                    if (!Page.IsPostBack)
-                    {
-                        getChequingAccountData();
-                        getSavingsAccountData();
-                    }
-
-                }
-
-            }
-            catch (Exception)
-            {
-
                 Response.Write("<script>alert('Session Expired Login Again');</script>");
                 Response.Redirect("LoginPage.aspx");
+                return;
+            }
+
+
+            if (!Page.IsPostBack)
+            {
+                getChequingAccountData();
+                getSavingsAccountData();
             }
         }
 
 
         protected void Button2_Click(object sender, EventArgs e)
         {
+            if (!TryGetPositiveTransferAmount(TextBox5.Text, out _))
+            {
+                Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
+                return;
+            }
+            if (!IsValidAccountNumber(TextBox1.Text.Trim()) || !IsValidAccountNumber(TextBox2.Text.Trim()))
+            {
+                Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
+                return;
+            }
             FromChequing();
             
         }
 
         protected void Button1_Click(object sender, EventArgs e)
         {
+            if (!TryGetPositiveTransferAmount(TextBox5.Text, out _))
+            {
+                Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
+                return;
+            }
+            if (!IsValidAccountNumber(TextBox1.Text.Trim()) || !IsValidAccountNumber(TextBox2.Text.Trim()))
+            {
+                Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
+                return;
+            }
             FromSavings();
             
         }
@@ -176,8 +184,9 @@ namespace OnlineBankingAzure
                 decimal sum = SavAmount + amount;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox1.Text.Trim() + "';", con);
+                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd1.Parameters.AddWithValue("@AccountBalance", difference);
+                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
 
 
 
@@ -185,8 +194,9 @@ namespace OnlineBankingAzure
 
 
 
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox2.Text.Trim() + "';", con);
+                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum);
+                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
 
 
                 var transactionType = "Chequing to Savings";
@@ -262,14 +272,16 @@ namespace OnlineBankingAzure
                 decimal sum1 = CheqAmount1 + amount1;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox1.Text.Trim() + "';", con);
+                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd1.Parameters.AddWithValue("@AccountBalance", sum1);
+                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
 
 
 
 
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox2.Text.Trim() + "';", con);
+                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd3.Parameters.AddWithValue("@AccountBalance", difference1);
+                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
 
 
 
@@ -347,7 +359,9 @@ namespace OnlineBankingAzure
                 var Chequing = "Chequing";
                 var Savings = "Savings";
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Savings + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", Savings);
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -361,7 +375,9 @@ namespace OnlineBankingAzure
                 decimal sum = decimalVal + amount;
 
 
-                SqlCommand cmd2 = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Chequing + "';", con);
+                SqlCommand cmd2 = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd2.Parameters.AddWithValue("@AccountType", Chequing);
                 SqlDataAdapter da1 = new SqlDataAdapter(cmd2);
                 DataTable dt1 = new DataTable();
                 da1.Fill(dt1);
@@ -373,14 +389,18 @@ namespace OnlineBankingAzure
                 decimal difference = Val1 - amount;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE UserID='" + Session["Username"].ToString() + "'and AccountNumber='" + TextBox1.Text.Trim() + "';", con);
+                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
                 cmd1.Parameters.AddWithValue("@AccountBalance", difference);
+                cmd1.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
 
 
 
 
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE UserID='" + Session["Username"].ToString() + "'and AccountNumber='" + TextBox2.Text.Trim() + "';", con);
+                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum);
+                cmd3.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
 
 
                 Response.Write("<script>alert('Transfered done');</script>");
@@ -418,7 +438,9 @@ namespace OnlineBankingAzure
                 var Chequing1 = "Chequing";
                 var Savings1 = "Savings";
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Chequing1 + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", Chequing1);
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -432,7 +454,9 @@ namespace OnlineBankingAzure
                 decimal sum1 = decimalVal1 + amount1;
 
 
-                SqlCommand cmd2 = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Savings1 + "';", con);
+                SqlCommand cmd2 = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd2.Parameters.AddWithValue("@AccountType", Savings1);
                 SqlDataAdapter da1 = new SqlDataAdapter(cmd2);
                 DataTable dt1 = new DataTable();
                 da1.Fill(dt1);
@@ -444,14 +468,18 @@ namespace OnlineBankingAzure
                 decimal difference1 = Val1 - amount1;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE UserID='" + Session["Username"].ToString() + "'and AccountNumber='" + TextBox2.Text.Trim() + "';", con);
+                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
                 cmd1.Parameters.AddWithValue("@AccountBalance", difference1);
+                cmd1.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
 
 
 
 
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE UserID='" + Session["Username"].ToString() + "'and AccountNumber='" + TextBox1.Text.Trim() + "';", con);
+                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum1);
+                cmd3.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
 
 
                 Response.Write("<script>alert('Transfered done');</script>");
@@ -498,7 +526,9 @@ namespace OnlineBankingAzure
 
                 var Chequing = "Chequing";
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Chequing + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", Chequing);
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -530,7 +560,9 @@ namespace OnlineBankingAzure
                 var Savings = "Savings";
 
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Savings + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", Savings);
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -548,6 +580,26 @@ namespace OnlineBankingAzure
                 Response.Write("<script>alert('" + ex.Message + "');</script>");
 
             }
+        }
+
+        bool IsUserAuthenticated()
+        {
+            return !string.IsNullOrWhiteSpace(Session["Username"] as string);
+        }
+
+        bool TryGetPositiveTransferAmount(string amountText, out decimal amount)
+        {
+            if (!decimal.TryParse(amountText, out amount))
+            {
+                return false;
+            }
+
+            return amount > 0;
+        }
+
+        bool IsValidAccountNumber(string accountNumber)
+        {
+            return !string.IsNullOrWhiteSpace(accountNumber) && Regex.IsMatch(accountNumber, "^[0-9]{6,20}$");
         }
     }
 }

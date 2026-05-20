@@ -10,6 +10,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OnlineBankingAzure
 {
@@ -18,31 +19,18 @@ namespace OnlineBankingAzure
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
         protected void Page_Load(object sender, EventArgs e)
         {
-            try
+            if (!IsUserAuthenticated())
             {
-                if (Session["Username"].ToString() == "" || Session["Username"] == null)
-                {
-                    Response.Write("<script>alert('Session Expired Login Again');</script>");
-                    Response.Redirect("LoginPage.aspx");
-                }
-                else
-                {
-
-
-                    if (!Page.IsPostBack)
-                    {
-                        getChequingAccountData();
-                        getSavingsAccountData();
-                    }
-
-                }
-
-            }
-            catch (Exception)
-            {
-
                 Response.Write("<script>alert('Session Expired Login Again');</script>");
                 Response.Redirect("LoginPage.aspx");
+                return;
+            }
+
+
+            if (!Page.IsPostBack)
+            {
+                getChequingAccountData();
+                getSavingsAccountData();
             }
         }
 
@@ -50,6 +38,26 @@ namespace OnlineBankingAzure
 
         protected void Button1_Click(object sender, EventArgs e)
         {
+            if (!TryGetPositiveTransferAmount(TextBox7.Text, out _))
+            {
+                Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
+                return;
+            }
+
+            var destinationAccount = TextBox6.Text.Trim();
+            if (!IsValidAccountNumber(destinationAccount))
+            {
+                Response.Write("<script>alert('Please enter a valid destination account number.');</script>");
+                return;
+            }
+
+            if ((DropDownList1.SelectedIndex == 0 && destinationAccount == TextBox1.Text.Trim()) ||
+                (DropDownList1.SelectedIndex != 0 && destinationAccount == TextBox2.Text.Trim()))
+            {
+                Response.Write("<script>alert('Destination account must be different from source account.');</script>");
+                return;
+            }
+
             if (DropDownList1.SelectedIndex == 0)
             {
                 FromChequing();
@@ -159,10 +167,16 @@ namespace OnlineBankingAzure
 
 
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE AccountNumber='" + TextBox6.Text.Trim() + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE AccountNumber=@AccountNumber;", con);
+                cmd.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
+                if (dt.Rows.Count == 0)
+                {
+                    Response.Write("<script>alert('Destination account not found.');</script>");
+                    return;
+                }
 
                 var iFirstVal = "";
                 iFirstVal = dt.Rows[0]["AccountBalance"].ToString();
@@ -180,14 +194,16 @@ namespace OnlineBankingAzure
                 decimal difference = value2 - amount;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox1.Text.Trim() + "';", con);
+                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd1.Parameters.AddWithValue("@AccountBalance", difference);
+                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
 
 
 
 
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox6.Text.Trim() + "';", con);
+                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum);
+                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
 
 
                 var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
@@ -246,10 +262,16 @@ namespace OnlineBankingAzure
 
 
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE AccountNumber='" + TextBox6.Text.Trim() + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE AccountNumber=@AccountNumber;", con);
+                cmd.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
+                if (dt.Rows.Count == 0)
+                {
+                    Response.Write("<script>alert('Destination account not found.');</script>");
+                    return;
+                }
 
                 var iFirstVal1 = "";
                 iFirstVal1 = dt.Rows[0]["AccountBalance"].ToString();
@@ -267,14 +289,16 @@ namespace OnlineBankingAzure
                 decimal difference1 = value1 - amount1;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox2.Text.Trim() + "';", con);
+                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd1.Parameters.AddWithValue("@AccountBalance", difference1);
+                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
 
 
 
 
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance  WHERE AccountNumber='" + TextBox6.Text.Trim() + "';", con);
+                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
                 cmd3.Parameters.AddWithValue("@AccountBalance", sum1);
+                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
 
 
                 var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
@@ -337,7 +361,9 @@ namespace OnlineBankingAzure
 
                 var Chequing = "Chequing";
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Chequing + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", Chequing);
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -372,7 +398,9 @@ namespace OnlineBankingAzure
                 var Savings = "Savings";
 
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID='" + Session["Username"].ToString() + "'AND AccountType='" + Savings + "';", con);
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", Savings);
                 SqlDataAdapter da = new SqlDataAdapter(cmd);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
@@ -390,6 +418,26 @@ namespace OnlineBankingAzure
                 Response.Write("<script>alert('" + ex.Message + "');</script>");
 
             }
+        }
+
+        bool IsUserAuthenticated()
+        {
+            return !string.IsNullOrWhiteSpace(Session["Username"] as string);
+        }
+
+        bool TryGetPositiveTransferAmount(string amountText, out decimal amount)
+        {
+            if (!decimal.TryParse(amountText, out amount))
+            {
+                return false;
+            }
+
+            return amount > 0;
+        }
+
+        bool IsValidAccountNumber(string accountNumber)
+        {
+            return !string.IsNullOrWhiteSpace(accountNumber) && Regex.IsMatch(accountNumber, "^[0-9]{6,20}$");
         }
     }
 }
