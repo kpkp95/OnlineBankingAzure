@@ -122,8 +122,6 @@ namespace OnlineBankingAzure
                 Response.Write("<script>alert('Transferred done');</script>");
                 con.Close();
 
-                Response.Write("<script>alert('Details Updated');</script>");
-
                 getChequingAccountData();
                 getSavingsAccountData();
 
@@ -179,8 +177,6 @@ namespace OnlineBankingAzure
                 }
                 Response.Write("<script>alert('Transferred done');</script>");
                 con.Close();
-
-                Response.Write("<script>alert('Details Updated');</script>");
 
                 getChequingAccountData();
                 getSavingsAccountData();
