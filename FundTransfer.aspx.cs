@@ -48,6 +48,11 @@ namespace OnlineBankingAzure
                 Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
                 return;
             }
+            if (TextBox1.Text.Trim() == TextBox2.Text.Trim())
+            {
+                Response.Write("<script>alert('Source and destination accounts must be different.');</script>");
+                return;
+            }
             FromChequing();
             
         }
@@ -62,6 +67,11 @@ namespace OnlineBankingAzure
             if (!IsValidAccountNumber(TextBox1.Text.Trim()) || !IsValidAccountNumber(TextBox2.Text.Trim()))
             {
                 Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
+                return;
+            }
+            if (TextBox1.Text.Trim() == TextBox2.Text.Trim())
+            {
+                Response.Write("<script>alert('Source and destination accounts must be different.');</script>");
                 return;
             }
             FromSavings();

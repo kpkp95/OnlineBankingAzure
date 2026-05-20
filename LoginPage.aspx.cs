@@ -337,7 +337,7 @@ namespace OnlineBankingAzure
 
         string HashPasswordForStorage(string password)
         {
-            const int iterations = 100000;
+            const int iterations = 600000;
             const int saltSize = 16;
             const int hashSize = 32;
 
