@@ -65,6 +65,10 @@ namespace OnlineBankingAzure
                     Response.Write("<script>alert('Invalid credentials');</script>");
                     return;
                 }
+                if (IsLegacyMd5Hash(storedPassword))
+                {
+                    UpgradeLegacyPasswordHash(con, userId, rawPassword);
+                }
 
                 if (DropDownList1.SelectedIndex == 0)
                 {
@@ -73,11 +77,11 @@ namespace OnlineBankingAzure
 
                         if (checkAccountExists(userId))
                         {
-                            if (checkUserExists(userId))
-                            {
-                                Session["Username"] = dt.Rows[0]["UserID"].ToString();
-                                Session["PASSWORD"] = string.Empty;
-                                Session["role"] = "Customer";
+                                if (checkUserExists(userId))
+                                {
+                                    Session["Username"] = dt.Rows[0]["UserID"].ToString();
+                                    Session.Remove("PASSWORD");
+                                    Session["role"] = "Customer";
 
                                 Response.Redirect("answerCheckPage.aspx");
 
@@ -98,7 +102,7 @@ namespace OnlineBankingAzure
                     else
                     {
                         Session["Username"] = dt.Rows[0]["UserID"].ToString();
-                        Session["PASSWORD"] = string.Empty;
+                        Session.Remove("PASSWORD");
                         Session["role"] = "Customer";
                         Response.Redirect("UserSignUp.aspx");
 
@@ -110,14 +114,14 @@ namespace OnlineBankingAzure
                     if (checkBankerExists(userId))
                     {
                         Session["Username1"] = dt.Rows[0]["UserID"].ToString();
-                        Session["PASSWORD1"] = string.Empty;
+                        Session.Remove("PASSWORD1");
                         Session["role"] = "Banker";
                         Response.Redirect("BankerProfile.aspx");
                     }
                     else
                     {
                         Session["Username1"] = dt.Rows[0]["UserID"].ToString();
-                        Session["PASSWORD1"] = string.Empty;
+                        Session.Remove("PASSWORD1");
                         Session["role"] = "Banker";
                         Response.Redirect("BankerSignUP.aspx");
 
@@ -307,7 +311,7 @@ namespace OnlineBankingAzure
                     return false;
                 }
 
-                using (var deriveBytes = new Rfc2898DeriveBytes(enteredPassword, salt, iterations))
+                using (var deriveBytes = new Rfc2898DeriveBytes(enteredPassword, salt, iterations, HashAlgorithmName.SHA256))
                 {
                     var actualHash = deriveBytes.GetBytes(expectedHash.Length);
                     return actualHash.SequenceEqual(expectedHash);
@@ -315,6 +319,44 @@ namespace OnlineBankingAzure
             }
 
             return string.Equals(HashLegacyMd5(enteredPassword), storedPassword, StringComparison.OrdinalIgnoreCase);
+        }
+
+        bool IsLegacyMd5Hash(string hash)
+        {
+            return !string.IsNullOrWhiteSpace(hash) && Regex.IsMatch(hash, "^[a-fA-F0-9]{32}$");
+        }
+
+        void UpgradeLegacyPasswordHash(SqlConnection con, string userId, string plaintextPassword)
+        {
+            var upgradedHash = HashPasswordForStorage(plaintextPassword);
+            SqlCommand updateCommand = new SqlCommand("UPDATE login SET Password=@Password WHERE UserID=@UserID;", con);
+            updateCommand.Parameters.AddWithValue("@Password", upgradedHash);
+            updateCommand.Parameters.AddWithValue("@UserID", userId);
+            updateCommand.ExecuteNonQuery();
+        }
+
+        string HashPasswordForStorage(string password)
+        {
+            const int iterations = 100000;
+            const int saltSize = 16;
+            const int hashSize = 32;
+
+            byte[] salt = new byte[saltSize];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
+
+            byte[] hash;
+            using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256))
+            {
+                hash = deriveBytes.GetBytes(hashSize);
+            }
+
+            return string.Format("PBKDF2${0}${1}${2}",
+                iterations,
+                Convert.ToBase64String(salt),
+                Convert.ToBase64String(hash));
         }
 
         string HashLegacyMd5(string password)

@@ -139,7 +139,7 @@ namespace OnlineBankingAzure
             }
 
             byte[] hash;
-            using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations))
+            using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256))
             {
                 hash = deriveBytes.GetBytes(hashSize);
             }

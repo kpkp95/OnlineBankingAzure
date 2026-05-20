@@ -39,6 +39,9 @@ namespace OnlineBankingAzure
 
         protected void Button1_Click(object sender, EventArgs e)
         {
+            getChequingAccountData();
+            getSavingsAccountData();
+
             if (!TryGetPositiveTransferAmount(TextBox7.Text, out _))
             {
                 Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
@@ -53,8 +56,14 @@ namespace OnlineBankingAzure
             }
 
             var sourceAccountType = DropDownList1.SelectedValue;
-            if ((sourceAccountType == "Chequing" && destinationAccount == TextBox1.Text.Trim()) ||
-                (sourceAccountType == "Savings" && destinationAccount == TextBox2.Text.Trim()))
+            var sourceAccountNumber = sourceAccountType == "Chequing" ? TextBox1.Text.Trim() : TextBox2.Text.Trim();
+            if (!IsValidAccountNumber(sourceAccountNumber))
+            {
+                Response.Write("<script>alert('Unable to resolve source account details. Please refresh and try again.');</script>");
+                return;
+            }
+
+            if (destinationAccount == sourceAccountNumber)
             {
                 Response.Write("<script>alert('Destination account must be different from source account.');</script>");
                 return;
