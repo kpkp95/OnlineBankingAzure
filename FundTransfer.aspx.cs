@@ -75,6 +75,11 @@ namespace OnlineBankingAzure
                 CheqAmount = System.Convert.ToDecimal(TextBox3.Text);
                 decimal amount = System.Convert.ToDecimal(TextBox5.Text);
                 decimal difference = CheqAmount - amount;
+                if (difference < 0)
+                {
+                    Response.Write("<script>alert('Insufficient funds in Chequing account.');</script>");
+                    return;
+                }
 
 
 
@@ -114,10 +119,23 @@ namespace OnlineBankingAzure
 
 
 
-                Response.Write("<script>alert('Transfered done');</script>");
-                cmd3.ExecuteNonQuery();
-                cmd1.ExecuteNonQuery();
-                cmd.ExecuteNonQuery();
+                SqlTransaction transaction = con.BeginTransaction();
+                cmd3.Transaction = transaction;
+                cmd1.Transaction = transaction;
+                cmd.Transaction = transaction;
+                try
+                {
+                    cmd3.ExecuteNonQuery();
+                    cmd1.ExecuteNonQuery();
+                    cmd.ExecuteNonQuery();
+                    transaction.Commit();
+                    Response.Write("<script>alert('Transfered done');</script>");
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
 
                 Response.Write("<script>alert('Details Updated');</script>");
 
@@ -163,6 +181,11 @@ namespace OnlineBankingAzure
                 SavAmount1 = System.Convert.ToDecimal(TextBox4.Text);
                 decimal amount1 = System.Convert.ToDecimal(TextBox5.Text);
                 decimal difference1 = SavAmount1 - amount1;
+                if (difference1 < 0)
+                {
+                    Response.Write("<script>alert('Insufficient funds in Savings account.');</script>");
+                    return;
+                }
 
 
 
@@ -198,10 +221,23 @@ namespace OnlineBankingAzure
                 cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
 
 
-                Response.Write("<script>alert('Transfered done');</script>");
-                cmd3.ExecuteNonQuery();
-                cmd1.ExecuteNonQuery();
-                cmd.ExecuteNonQuery();
+                SqlTransaction transaction = con.BeginTransaction();
+                cmd3.Transaction = transaction;
+                cmd1.Transaction = transaction;
+                cmd.Transaction = transaction;
+                try
+                {
+                    cmd3.ExecuteNonQuery();
+                    cmd1.ExecuteNonQuery();
+                    cmd.ExecuteNonQuery();
+                    transaction.Commit();
+                    Response.Write("<script>alert('Transfered done');</script>");
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
                 con.Close();
 
 

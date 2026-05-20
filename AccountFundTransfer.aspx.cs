@@ -114,8 +114,12 @@ namespace OnlineBankingAzure
                 decimal difference = value2 - amount;
 
 
+                if (!ExecuteTransfer(con, TextBox1.Text.Trim(), difference, TextBox6.Text.Trim(), sum, amount, TextBox1.Text.Trim()))
+                {
+                    Response.Write("<script>alert('Insufficient funds in source account.');</script>");
+                    return;
+                }
                 Response.Write("<script>alert('Transfered done');</script>");
-                ExecuteTransfer(con, TextBox1.Text.Trim(), difference, TextBox6.Text.Trim(), sum, amount, TextBox1.Text.Trim());
                 con.Close();
 
                 Response.Write("<script>alert('Details Updated');</script>");
@@ -168,8 +172,12 @@ namespace OnlineBankingAzure
                 decimal difference1 = value1 - amount1;
 
 
+                if (!ExecuteTransfer(con, TextBox2.Text.Trim(), difference1, TextBox6.Text.Trim(), sum1, amount1, TextBox2.Text.Trim()))
+                {
+                    Response.Write("<script>alert('Insufficient funds in source account.');</script>");
+                    return;
+                }
                 Response.Write("<script>alert('Transfered done');</script>");
-                ExecuteTransfer(con, TextBox2.Text.Trim(), difference1, TextBox6.Text.Trim(), sum1, amount1, TextBox2.Text.Trim());
                 con.Close();
 
                 Response.Write("<script>alert('Details Updated');</script>");
@@ -246,8 +254,13 @@ namespace OnlineBankingAzure
             return decimal.TryParse(dt.Rows[0]["AccountBalance"].ToString(), out accountBalance);
         }
 
-        void ExecuteTransfer(SqlConnection con, string sourceAccountNumber, decimal sourceAccountBalance, string destinationAccountNumber, decimal destinationAccountBalance, decimal amount, string transactionAccountNumber)
+        bool ExecuteTransfer(SqlConnection con, string sourceAccountNumber, decimal sourceAccountBalance, string destinationAccountNumber, decimal destinationAccountBalance, decimal amount, string transactionAccountNumber)
         {
+            if (sourceAccountBalance < 0)
+            {
+                return false;
+            }
+
             SqlCommand updateSource = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
             updateSource.Parameters.AddWithValue("@AccountBalance", sourceAccountBalance);
             updateSource.Parameters.AddWithValue("@AccountNumber", sourceAccountNumber);
@@ -263,9 +276,23 @@ namespace OnlineBankingAzure
             recordTransfer.Parameters.AddWithValue("@AccountNumber", transactionAccountNumber);
             recordTransfer.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
 
-            updateDestination.ExecuteNonQuery();
-            updateSource.ExecuteNonQuery();
-            recordTransfer.ExecuteNonQuery();
+            SqlTransaction transaction = con.BeginTransaction();
+            updateDestination.Transaction = transaction;
+            updateSource.Transaction = transaction;
+            recordTransfer.Transaction = transaction;
+            try
+            {
+                updateDestination.ExecuteNonQuery();
+                updateSource.ExecuteNonQuery();
+                recordTransfer.ExecuteNonQuery();
+                transaction.Commit();
+                return true;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         void LoadAccountData(string accountType, TextBox accountNumberTextBox, TextBox accountBalanceTextBox)
