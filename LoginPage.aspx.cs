@@ -16,6 +16,8 @@ namespace OnlineBankingAzure
     public partial class LoginPage : System.Web.UI.Page
     {
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
+        private static readonly Regex UserNameRegex = new Regex("^[A-Za-z0-9_]{3,50}$", RegexOptions.Compiled);
+
         protected void Page_Load(object sender, EventArgs e)
         {
 
@@ -35,20 +37,6 @@ namespace OnlineBankingAzure
                 return;
             }
 
-            byte[] hs = new byte[255];
-            string pass = rawPassword;
-            MD5 md5 = MD5.Create();
-            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(pass);
-            byte[] hash = md5.ComputeHash(inputBytes);
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < hash.Length; i++)
-            {
-                hs[i] = hash[i];
-                sb.Append(hs[i].ToString("x2"));
-            }
-            var hash_pass = sb.ToString();
-
-
             try
             {
                 SqlConnection con = new SqlConnection(strcon);
@@ -57,86 +45,88 @@ namespace OnlineBankingAzure
                     con.Open();
                 }
 
-
-                SqlCommand cmd1 = new SqlCommand("SELECT UserID from login where UserID=@UserID AND Password=@Password AND user_type=@UserType;", con);
+                SqlCommand cmd1 = new SqlCommand("SELECT UserID, Password from login where UserID=@UserID AND user_type=@UserType;", con);
                 cmd1.Parameters.AddWithValue("@UserID", userId);
-                cmd1.Parameters.AddWithValue("@Password", hash_pass);
                 cmd1.Parameters.AddWithValue("@UserType", loginType);
 
                 SqlDataAdapter da = new SqlDataAdapter(cmd1);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
-                if (dt.Rows.Count > 0)
+
+                if (dt.Rows.Count == 0)
                 {
+                    Response.Write("<script>alert('Invalid credentials');</script>");
+                    return;
+                }
 
-                    if (DropDownList1.SelectedIndex == 0)
+                var storedPassword = dt.Rows[0]["Password"].ToString();
+                if (!VerifyPassword(rawPassword, storedPassword))
+                {
+                    Response.Write("<script>alert('Invalid credentials');</script>");
+                    return;
+                }
+
+                if (DropDownList1.SelectedIndex == 0)
+                {
+                    if (checkCustomerExists(userId))
                     {
-                        if (checkCustomerExists(userId))
+
+                        if (checkAccountExists(userId))
                         {
-
-                            if (checkAccountExists(userId))
+                            if (checkUserExists(userId))
                             {
-                                if (checkUserExists(userId))
-                                {
-                                    Session["Username"] = dt.Rows[0]["UserID"].ToString();
-                                    Session["PASSWORD"] = rawPassword;
-                                    Session["role"] = "Customer";
+                                Session["Username"] = dt.Rows[0]["UserID"].ToString();
+                                Session["PASSWORD"] = string.Empty;
+                                Session["role"] = "Customer";
 
-                                    Response.Redirect("answerCheckPage.aspx");
+                                Response.Redirect("answerCheckPage.aspx");
 
-                                }
-                                else
-                                {
-                                    Response.Redirect("SecurityQuestionPage.aspx");
-                                }
                             }
                             else
                             {
-                                Response.Write("<script>alert('Account not created.Please wait for Banker to approve');</script>");
-
-
-
+                                Response.Redirect("SecurityQuestionPage.aspx");
                             }
                         }
                         else
                         {
-                            Session["Username"] = dt.Rows[0]["UserID"].ToString();
-                            Session["PASSWORD"] = rawPassword;
-                            Session["role"] = "Customer";
-                            Response.Redirect("UserSignUp.aspx");
+                            Response.Write("<script>alert('Account not created.Please wait for Banker to approve');</script>");
+
+
 
                         }
-
                     }
                     else
                     {
-                        if (checkBankerExists(userId))
-                        {
-                            Session["Username1"] = dt.Rows[0]["UserID"].ToString();
-                            Session["PASSWORD1"] = rawPassword;
-                            Session["role"] = "Banker";
-                            Response.Redirect("BankerProfile.aspx");
-                        }
-                        else
-                        {
-                            Session["Username1"] = dt.Rows[0]["UserID"].ToString();
-                            Session["PASSWORD1"] = rawPassword;
-                            Session["role"] = "Banker";
-                            Response.Redirect("BankerSignUP.aspx");
-
-                        }
-
+                        Session["Username"] = dt.Rows[0]["UserID"].ToString();
+                        Session["PASSWORD"] = string.Empty;
+                        Session["role"] = "Customer";
+                        Response.Redirect("UserSignUp.aspx");
 
                     }
-
 
                 }
                 else
                 {
-                    Response.Write("<script>alert('Invalid credentials');</script>");
+                    if (checkBankerExists(userId))
+                    {
+                        Session["Username1"] = dt.Rows[0]["UserID"].ToString();
+                        Session["PASSWORD1"] = string.Empty;
+                        Session["role"] = "Banker";
+                        Response.Redirect("BankerProfile.aspx");
+                    }
+                    else
+                    {
+                        Session["Username1"] = dt.Rows[0]["UserID"].ToString();
+                        Session["PASSWORD1"] = string.Empty;
+                        Session["role"] = "Banker";
+                        Response.Redirect("BankerSignUP.aspx");
+
+                    }
+
+
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Response.Write("<script>alert('An unexpected error occurred while logging in.');</script>");
             }
@@ -166,7 +156,7 @@ namespace OnlineBankingAzure
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Response.Write("<script>alert('Unable to verify customer details.');</script>");
                 return false;
@@ -197,7 +187,7 @@ namespace OnlineBankingAzure
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Response.Write("<script>alert('Unable to verify account details.');</script>");
                 return false;
@@ -231,7 +221,7 @@ namespace OnlineBankingAzure
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Response.Write("<script>alert('Unable to verify security setup.');</script>");
                 return false;
@@ -262,7 +252,7 @@ namespace OnlineBankingAzure
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Response.Write("<script>alert('Unable to verify banker details.');</script>");
                 return false;
@@ -271,7 +261,7 @@ namespace OnlineBankingAzure
 
         bool IsValidUsername(string userId)
         {
-            return !string.IsNullOrWhiteSpace(userId) && Regex.IsMatch(userId, "^[A-Za-z0-9_]{3,50}$");
+            return !string.IsNullOrWhiteSpace(userId) && UserNameRegex.IsMatch(userId);
         }
 
         bool IsValidPasswordInput(string password)
@@ -284,13 +274,62 @@ namespace OnlineBankingAzure
             return loginType == "Customer" || loginType == "Banker";
         }
 
+        bool VerifyPassword(string enteredPassword, string storedPassword)
+        {
+            if (string.IsNullOrWhiteSpace(storedPassword))
+            {
+                return false;
+            }
 
+            if (storedPassword.StartsWith("PBKDF2$", StringComparison.Ordinal))
+            {
+                var parts = storedPassword.Split('$');
+                if (parts.Length != 4)
+                {
+                    return false;
+                }
 
+                int iterations;
+                if (!int.TryParse(parts[1], out iterations) || iterations <= 0)
+                {
+                    return false;
+                }
 
+                byte[] salt;
+                byte[] expectedHash;
+                try
+                {
+                    salt = Convert.FromBase64String(parts[2]);
+                    expectedHash = Convert.FromBase64String(parts[3]);
+                }
+                catch
+                {
+                    return false;
+                }
 
+                using (var deriveBytes = new Rfc2898DeriveBytes(enteredPassword, salt, iterations))
+                {
+                    var actualHash = deriveBytes.GetBytes(expectedHash.Length);
+                    return actualHash.SequenceEqual(expectedHash);
+                }
+            }
 
+            return string.Equals(HashLegacyMd5(enteredPassword), storedPassword, StringComparison.OrdinalIgnoreCase);
+        }
 
+        string HashLegacyMd5(string password)
+        {
+            using (var md5 = MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(Encoding.ASCII.GetBytes(password));
+                StringBuilder sb = new StringBuilder(hash.Length * 2);
+                for (int i = 0; i < hash.Length; i++)
+                {
+                    sb.Append(hash[i].ToString("x2"));
+                }
 
-
+                return sb.ToString();
+            }
+        }
     }
 }

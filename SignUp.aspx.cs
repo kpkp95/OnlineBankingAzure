@@ -18,6 +18,8 @@ namespace OnlineBankingAzure
     {
 
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
+        private static readonly Regex UserNameRegex = new Regex("^[A-Za-z0-9_]{3,50}$", RegexOptions.Compiled);
+
         protected void Page_Load(object sender, EventArgs e)
         {
 
@@ -37,18 +39,7 @@ namespace OnlineBankingAzure
                 return;
             }
 
-            byte[] hs = new byte[255];
-            string pass = password;
-            MD5 md5 = MD5.Create();
-            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(pass);
-            byte[] hash = md5.ComputeHash(inputBytes);
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < hash.Length; i++)
-            {
-                hs[i] = hash[i];
-                sb.Append(hs[i].ToString("x2"));
-            }
-            var hash_pass = sb.ToString();
+            var hash_pass = HashPasswordForStorage(password);
 
             if (checkMemberExists(userId))
             {
@@ -80,7 +71,7 @@ namespace OnlineBankingAzure
                     Response.Write("<script>alert('Sign Up Successful. Go to User Login to Login');</script>");
                     Response.Redirect("LoginPage.aspx");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Response.Write("<script>alert('Unable to complete signup right now.');</script>");
                 }
@@ -113,7 +104,7 @@ namespace OnlineBankingAzure
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Response.Write("<script>alert('Unable to verify existing user.');</script>");
                 return false;
@@ -122,7 +113,7 @@ namespace OnlineBankingAzure
 
         bool IsValidUsername(string userId)
         {
-            return !string.IsNullOrWhiteSpace(userId) && Regex.IsMatch(userId, "^[A-Za-z0-9_]{3,50}$");
+            return !string.IsNullOrWhiteSpace(userId) && UserNameRegex.IsMatch(userId);
         }
 
         bool IsValidPassword(string password)
@@ -133,6 +124,30 @@ namespace OnlineBankingAzure
         bool IsValidSignUpType(string signUpType)
         {
             return signUpType == "Customer" || signUpType == "Banker";
+        }
+
+        string HashPasswordForStorage(string password)
+        {
+            const int iterations = 100000;
+            const int saltSize = 16;
+            const int hashSize = 32;
+
+            byte[] salt = new byte[saltSize];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
+
+            byte[] hash;
+            using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations))
+            {
+                hash = deriveBytes.GetBytes(hashSize);
+            }
+
+            return string.Format("PBKDF2${0}${1}${2}",
+                iterations,
+                Convert.ToBase64String(salt),
+                Convert.ToBase64String(hash));
         }
     }
 }

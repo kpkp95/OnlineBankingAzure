@@ -17,6 +17,7 @@ namespace OnlineBankingAzure
     public partial class FundTransfer : System.Web.UI.Page
     {
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
+        private static readonly Regex AccountNumberRegex = new Regex("^[0-9]{6,20}$", RegexOptions.Compiled);
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsUserAuthenticated())
@@ -599,7 +600,7 @@ namespace OnlineBankingAzure
 
         bool IsValidAccountNumber(string accountNumber)
         {
-            return !string.IsNullOrWhiteSpace(accountNumber) && Regex.IsMatch(accountNumber, "^[0-9]{6,20}$");
+            return !string.IsNullOrWhiteSpace(accountNumber) && AccountNumberRegex.IsMatch(accountNumber);
         }
     }
 }

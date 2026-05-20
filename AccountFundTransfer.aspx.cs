@@ -17,6 +17,7 @@ namespace OnlineBankingAzure
     public partial class AccountFundTransfer : System.Web.UI.Page
     {
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
+        private static readonly Regex AccountNumberRegex = new Regex("^[0-9]{6,20}$", RegexOptions.Compiled);
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsUserAuthenticated())
@@ -51,22 +52,27 @@ namespace OnlineBankingAzure
                 return;
             }
 
-            if ((DropDownList1.SelectedIndex == 0 && destinationAccount == TextBox1.Text.Trim()) ||
-                (DropDownList1.SelectedIndex != 0 && destinationAccount == TextBox2.Text.Trim()))
+            var sourceAccountType = DropDownList1.SelectedValue;
+            if ((sourceAccountType == "Chequing" && destinationAccount == TextBox1.Text.Trim()) ||
+                (sourceAccountType == "Savings" && destinationAccount == TextBox2.Text.Trim()))
             {
                 Response.Write("<script>alert('Destination account must be different from source account.');</script>");
                 return;
             }
 
-            if (DropDownList1.SelectedIndex == 0)
+            if (sourceAccountType == "Chequing")
             {
                 FromChequing();
                 
             }
-            else
+            else if (sourceAccountType == "Savings")
             {
                 FromSavings();
                 
+            }
+            else
+            {
+                Response.Write("<script>alert('Please select a valid source account type.');</script>");
             }
         }
 
@@ -437,7 +443,7 @@ namespace OnlineBankingAzure
 
         bool IsValidAccountNumber(string accountNumber)
         {
-            return !string.IsNullOrWhiteSpace(accountNumber) && Regex.IsMatch(accountNumber, "^[0-9]{6,20}$");
+            return !string.IsNullOrWhiteSpace(accountNumber) && AccountNumberRegex.IsMatch(accountNumber);
         }
     }
 }
