@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -10,6 +10,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OnlineBankingAzure
 {
@@ -17,6 +18,8 @@ namespace OnlineBankingAzure
     {
 
         string strcon = ConfigurationManager.ConnectionStrings["con"].ConnectionString;
+        private static readonly Regex UserNameRegex = new Regex("^[A-Za-z0-9_]{3,50}$", RegexOptions.Compiled);
+
         protected void Page_Load(object sender, EventArgs e)
         {
 
@@ -26,20 +29,19 @@ namespace OnlineBankingAzure
 
         protected void Button1_Click(object sender, EventArgs e)
         {
-            byte[] hs = new byte[255];
-            string pass = TextBox2.Text;
-            MD5 md5 = MD5.Create();
-            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(pass);
-            byte[] hash = md5.ComputeHash(inputBytes);
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < hash.Length; i++)
-            {
-                hs[i] = hash[i];
-                sb.Append(hs[i].ToString("x2"));
-            }
-            var hash_pass = sb.ToString();
+            var userId = TextBox1.Text.Trim();
+            var password = TextBox2.Text;
+            var signUpType = DropDownList1.SelectedValue?.Trim();
 
-            if (checkMemberExists())
+            if (!IsValidUsername(userId) || !IsValidPassword(password) || !IsValidSignUpType(signUpType))
+            {
+                Response.Write("<script>alert('Please enter a valid username, password, and signup type.');</script>");
+                return;
+            }
+
+            var hash_pass = HashPasswordForStorage(password);
+
+            if (checkMemberExists(userId))
             {
 
                 Response.Write("<script>alert('Username already exists,Please try a different Username');</script>");
@@ -57,9 +59,9 @@ namespace OnlineBankingAzure
                     SqlCommand cmd = new SqlCommand("INSERT INTO login(UserID,Password,user_type) values(@UserID,@Password,@user_type)", con);
 
 
-                    cmd.Parameters.AddWithValue("@UserID", TextBox1.Text.Trim());
+                    cmd.Parameters.AddWithValue("@UserID", userId);
                     cmd.Parameters.AddWithValue("@Password", hash_pass);
-                    cmd.Parameters.AddWithValue("@user_type", DropDownList1.SelectedItem.Value);
+                    cmd.Parameters.AddWithValue("@user_type", signUpType);
 
                     cmd.ExecuteNonQuery();
 
@@ -69,43 +71,83 @@ namespace OnlineBankingAzure
                     Response.Write("<script>alert('Sign Up Successful. Go to User Login to Login');</script>");
                     Response.Redirect("LoginPage.aspx");
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Response.Write("<script>alert('" + ex.Message + "');</script>");
+                    Response.Write("<script>alert('Unable to complete signup right now.');</script>");
                 }
 
             }
 
 
-            bool checkMemberExists()
+        }
+
+        bool checkMemberExists(string userId)
+        {
+            try
             {
-                try
+                SqlConnection con = new SqlConnection(strcon);
+                if (con.State == ConnectionState.Closed)
                 {
-                    SqlConnection con = new SqlConnection(strcon);
-                    if (con.State == ConnectionState.Closed)
-                    {
-                        con.Open();
-                    }
-                    SqlCommand cmd = new SqlCommand("SELECT * from login where username='" + TextBox1.Text.Trim() + "';", con);
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
-                    DataTable dt = new DataTable();
-                    da.Fill(dt);
-                    if (dt.Rows.Count >= 1)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    con.Open();
                 }
-                catch (Exception ex)
+                SqlCommand cmd = new SqlCommand("SELECT 1 from login where UserID=@UserID;", con);
+                cmd.Parameters.AddWithValue("@UserID", userId);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                if (dt.Rows.Count >= 1)
                 {
-                    Response.Write("<script>alert('" + ex.Message + "');</script>");
+                    return true;
+                }
+                else
+                {
                     return false;
                 }
             }
+            catch (Exception)
+            {
+                Response.Write("<script>alert('Unable to verify existing user.');</script>");
+                return false;
+            }
+        }
 
+        bool IsValidUsername(string userId)
+        {
+            return !string.IsNullOrWhiteSpace(userId) && UserNameRegex.IsMatch(userId);
+        }
+
+        bool IsValidPassword(string password)
+        {
+            return !string.IsNullOrWhiteSpace(password) && password.Length >= 8 && password.Length <= 128;
+        }
+
+        bool IsValidSignUpType(string signUpType)
+        {
+            return signUpType == "Customer" || signUpType == "Banker";
+        }
+
+        string HashPasswordForStorage(string password)
+        {
+            const int iterations = 600000;
+            const int saltSize = 16;
+            const int hashSize = 32;
+
+            byte[] salt = new byte[saltSize];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(salt);
+            }
+
+            byte[] hash;
+            using (var deriveBytes = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256))
+            {
+                hash = deriveBytes.GetBytes(hashSize);
+            }
+
+            return string.Format("PBKDF2${0}${1}${2}",
+                iterations,
+                Convert.ToBase64String(salt),
+                Convert.ToBase64String(hash));
         }
     }
 }
