@@ -129,7 +129,7 @@ namespace OnlineBankingAzure
                     cmd1.ExecuteNonQuery();
                     cmd.ExecuteNonQuery();
                     transaction.Commit();
-                    Response.Write("<script>alert('Transfered done');</script>");
+                    Response.Write("<script>alert('Transferred done');</script>");
                 }
                 catch
                 {
@@ -231,7 +231,7 @@ namespace OnlineBankingAzure
                     cmd1.ExecuteNonQuery();
                     cmd.ExecuteNonQuery();
                     transaction.Commit();
-                    Response.Write("<script>alert('Transfered done');</script>");
+                    Response.Write("<script>alert('Transferred done');</script>");
                 }
                 catch
                 {

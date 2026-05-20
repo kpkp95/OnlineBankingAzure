@@ -119,7 +119,7 @@ namespace OnlineBankingAzure
                     Response.Write("<script>alert('Insufficient funds in source account.');</script>");
                     return;
                 }
-                Response.Write("<script>alert('Transfered done');</script>");
+                Response.Write("<script>alert('Transferred done');</script>");
                 con.Close();
 
                 Response.Write("<script>alert('Details Updated');</script>");
@@ -177,7 +177,7 @@ namespace OnlineBankingAzure
                     Response.Write("<script>alert('Insufficient funds in source account.');</script>");
                     return;
                 }
-                Response.Write("<script>alert('Transfered done');</script>");
+                Response.Write("<script>alert('Transferred done');</script>");
                 con.Close();
 
                 Response.Write("<script>alert('Details Updated');</script>");
