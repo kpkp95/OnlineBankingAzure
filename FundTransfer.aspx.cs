@@ -38,19 +38,8 @@ namespace OnlineBankingAzure
 
         protected void Button2_Click(object sender, EventArgs e)
         {
-            if (!TryGetPositiveTransferAmount(TextBox5.Text, out _))
+            if (!ValidateTransferBetweenOwnAccounts())
             {
-                Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
-                return;
-            }
-            if (!IsValidAccountNumber(TextBox1.Text.Trim()) || !IsValidAccountNumber(TextBox2.Text.Trim()))
-            {
-                Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
-                return;
-            }
-            if (TextBox1.Text.Trim() == TextBox2.Text.Trim())
-            {
-                Response.Write("<script>alert('Source and destination accounts must be different.');</script>");
                 return;
             }
             FromChequing();
@@ -59,113 +48,13 @@ namespace OnlineBankingAzure
 
         protected void Button1_Click(object sender, EventArgs e)
         {
-            if (!TryGetPositiveTransferAmount(TextBox5.Text, out _))
+            if (!ValidateTransferBetweenOwnAccounts())
             {
-                Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
-                return;
-            }
-            if (!IsValidAccountNumber(TextBox1.Text.Trim()) || !IsValidAccountNumber(TextBox2.Text.Trim()))
-            {
-                Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
-                return;
-            }
-            if (TextBox1.Text.Trim() == TextBox2.Text.Trim())
-            {
-                Response.Write("<script>alert('Source and destination accounts must be different.');</script>");
                 return;
             }
             FromSavings();
             
         }
-
-
-        void TransactionCheqToSav()
-        {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-
-
-                var transactionType = "Chequing to Savings";
-
-                decimal amount1 = System.Convert.ToDecimal(TextBox5.Text);
-                SqlCommand cmd = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
-
-                cmd.Parameters.AddWithValue("@TransactionType", transactionType);
-                cmd.Parameters.AddWithValue("@DateTime", DateTime.Now);
-                cmd.Parameters.AddWithValue("@Amount", amount1);
-                cmd.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
-
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-
-
-
-                cmd.ExecuteNonQuery();
-
-
-
-                con.Close();
-                Response.Write("<script>alert('Details Updated');</script>");
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-            }
-        }
-
-
-
-
-
-        void TransactionSavToCheq()
-        {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-
-
-                var transactionType = "Savings to Chequing";
-
-                decimal amount1 = System.Convert.ToDecimal(TextBox5.Text);
-                SqlCommand cmd = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
-
-                cmd.Parameters.AddWithValue("@TransactionType", transactionType);
-                cmd.Parameters.AddWithValue("@DateTime", DateTime.Now);
-                cmd.Parameters.AddWithValue("@Amount", amount1);
-                cmd.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
-
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-
-
-
-                cmd.ExecuteNonQuery();
-
-
-
-                con.Close();
-                Response.Write("<script>alert('Details Updated');</script>");
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-            }
-        }
-
-
-
-
 
         void FromChequing()
         {
@@ -336,261 +225,14 @@ namespace OnlineBankingAzure
 
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        void getChequingToSavings()
-        {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-                var Chequing = "Chequing";
-                var Savings = "Savings";
-
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd.Parameters.AddWithValue("@AccountType", Savings);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-                var iFirstVal = "";
-                iFirstVal = dt.Rows[0]["AccountBalance"].ToString();
-
-                decimal decimalVal = 0;
-                decimalVal = System.Convert.ToDecimal(iFirstVal);
-                decimal amount = System.Convert.ToDecimal(TextBox5.Text);
-                decimal sum = decimalVal + amount;
-
-
-                SqlCommand cmd2 = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd2.Parameters.AddWithValue("@AccountType", Chequing);
-                SqlDataAdapter da1 = new SqlDataAdapter(cmd2);
-                DataTable dt1 = new DataTable();
-                da1.Fill(dt1);
-                var value2 = "";
-                value2 = dt1.Rows[0]["AccountBalance"].ToString();
-                decimal Val1 = 0;
-                Val1 = System.Convert.ToDecimal(value2);
-
-                decimal difference = Val1 - amount;
-
-
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
-                cmd1.Parameters.AddWithValue("@AccountBalance", difference);
-                cmd1.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
-
-
-
-
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
-                cmd3.Parameters.AddWithValue("@AccountBalance", sum);
-                cmd3.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
-
-
-                Response.Write("<script>alert('Transfered done');</script>");
-                cmd3.ExecuteNonQuery();
-                cmd1.ExecuteNonQuery();
-                con.Close();
-
-                getChequingAccountData();
-                getSavingsAccountData();
-
-
-
-
-
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-
-            }
-        }
-
-
-        void getSavingsToChequing()
-        {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-                var Chequing1 = "Chequing";
-                var Savings1 = "Savings";
-
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd.Parameters.AddWithValue("@AccountType", Chequing1);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-                var iFirstVal1 = "";
-                iFirstVal1 = dt.Rows[0]["AccountBalance"].ToString();
-
-                decimal decimalVal1 = 0;
-                decimalVal1 = System.Convert.ToDecimal(iFirstVal1);
-                decimal amount1 = System.Convert.ToDecimal(TextBox5.Text);
-                decimal sum1 = decimalVal1 + amount1;
-
-
-                SqlCommand cmd2 = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd2.Parameters.AddWithValue("@AccountType", Savings1);
-                SqlDataAdapter da1 = new SqlDataAdapter(cmd2);
-                DataTable dt1 = new DataTable();
-                da1.Fill(dt1);
-                var value2 = "";
-                value2 = dt1.Rows[0]["AccountBalance"].ToString();
-                decimal Val1 = 0;
-                Val1 = System.Convert.ToDecimal(value2);
-
-                decimal difference1 = Val1 - amount1;
-
-
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
-                cmd1.Parameters.AddWithValue("@AccountBalance", difference1);
-                cmd1.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
-
-
-
-
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE UserID=@UserID and AccountNumber=@AccountNumber;", con);
-                cmd3.Parameters.AddWithValue("@AccountBalance", sum1);
-                cmd3.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
-
-
-                Response.Write("<script>alert('Transfered done');</script>");
-                cmd3.ExecuteNonQuery();
-                cmd1.ExecuteNonQuery();
-                con.Close();
-
-                getChequingAccountData();
-                getSavingsAccountData();
-
-
-
-
-
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-
-            }
-        }
-
-
-
-
-
-
-
-
-
-
-
-
         void getChequingAccountData()
         {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-                var Chequing = "Chequing";
-
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd.Parameters.AddWithValue("@AccountType", Chequing);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-
-
-                TextBox1.Text = dt.Rows[0]["AccountNumber"].ToString();
-                TextBox3.Text = dt.Rows[0]["AccountBalance"].ToString();
-
-
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-
-            }
+            LoadAccountData("Chequing", TextBox1, TextBox3);
         }
 
         void getSavingsAccountData()
         {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-                var Savings = "Savings";
-
-
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd.Parameters.AddWithValue("@AccountType", Savings);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-
-
-                TextBox2.Text = dt.Rows[0]["AccountNumber"].ToString();
-                TextBox4.Text = dt.Rows[0]["AccountBalance"].ToString();
-
-
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-
-            }
+            LoadAccountData("Savings", TextBox2, TextBox4);
         }
 
         bool IsUserAuthenticated()
@@ -611,6 +253,57 @@ namespace OnlineBankingAzure
         bool IsValidAccountNumber(string accountNumber)
         {
             return !string.IsNullOrWhiteSpace(accountNumber) && AccountNumberRegex.IsMatch(accountNumber);
+        }
+
+        bool ValidateTransferBetweenOwnAccounts()
+        {
+            if (!TryGetPositiveTransferAmount(TextBox5.Text, out _))
+            {
+                Response.Write("<script>alert('Please enter a valid transfer amount greater than zero.');</script>");
+                return false;
+            }
+
+            if (!IsValidAccountNumber(TextBox1.Text.Trim()) || !IsValidAccountNumber(TextBox2.Text.Trim()))
+            {
+                Response.Write("<script>alert('Invalid account details. Please refresh and try again.');</script>");
+                return false;
+            }
+
+            if (TextBox1.Text.Trim() == TextBox2.Text.Trim())
+            {
+                Response.Write("<script>alert('Source and destination accounts must be different.');</script>");
+                return false;
+            }
+
+            return true;
+        }
+
+        void LoadAccountData(string accountType, TextBox accountNumberTextBox, TextBox accountBalanceTextBox)
+        {
+            try
+            {
+                SqlConnection con = new SqlConnection(strcon);
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", accountType);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                accountNumberTextBox.Text = dt.Rows[0]["AccountNumber"].ToString();
+                accountBalanceTextBox.Text = dt.Rows[0]["AccountBalance"].ToString();
+
+            }
+            catch (Exception ex)
+            {
+                Response.Write("<script>alert('" + ex.Message + "');</script>");
+
+            }
         }
     }
 }

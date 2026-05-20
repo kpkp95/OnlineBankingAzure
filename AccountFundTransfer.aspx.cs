@@ -84,91 +84,6 @@ namespace OnlineBankingAzure
                 Response.Write("<script>alert('Please select a valid source account type.');</script>");
             }
         }
-
-
-
-        void TransactionCheq()
-        {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-
-
-                var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
-
-                decimal amount1 = System.Convert.ToDecimal(TextBox7.Text);
-                SqlCommand cmd = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
-
-                cmd.Parameters.AddWithValue("@TransactionType", transactionType);
-                cmd.Parameters.AddWithValue("@DateTime", DateTime.Now);
-                cmd.Parameters.AddWithValue("@Amount", amount1);
-                cmd.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
-
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-
-
-
-                cmd.ExecuteNonQuery();
-
-
-
-                con.Close();
-                Response.Write("<script>alert('Details Updated');</script>");
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-            }
-        }
-
-
-        void TransactionSavings()
-        {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-
-
-                var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
-
-                decimal amount1 = System.Convert.ToDecimal(TextBox7.Text);
-                SqlCommand cmd = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
-
-                cmd.Parameters.AddWithValue("@TransactionType", transactionType);
-                cmd.Parameters.AddWithValue("@DateTime", DateTime.Now);
-                cmd.Parameters.AddWithValue("@Amount", amount1);
-                cmd.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
-
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-
-
-
-                cmd.ExecuteNonQuery();
-
-
-
-                con.Close();
-                Response.Write("<script>alert('Details Updated');</script>");
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-            }
-        }
-
-
         void FromChequing()
         {
             try
@@ -182,24 +97,14 @@ namespace OnlineBankingAzure
 
 
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE AccountNumber=@AccountNumber;", con);
-                cmd.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-                if (dt.Rows.Count == 0)
+                decimal destinationBalance;
+                if (!TryGetAccountBalanceByAccountNumber(con, TextBox6.Text.Trim(), out destinationBalance))
                 {
                     Response.Write("<script>alert('Destination account not found.');</script>");
                     return;
                 }
-
-                var iFirstVal = "";
-                iFirstVal = dt.Rows[0]["AccountBalance"].ToString();
-
-                decimal decimalVal = 0;
-                decimalVal = System.Convert.ToDecimal(iFirstVal);
                 decimal amount = System.Convert.ToDecimal(TextBox7.Text);
-                decimal sum = decimalVal + amount;
+                decimal sum = destinationBalance + amount;
 
 
 
@@ -209,39 +114,8 @@ namespace OnlineBankingAzure
                 decimal difference = value2 - amount;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
-                cmd1.Parameters.AddWithValue("@AccountBalance", difference);
-                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
-
-
-
-
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
-                cmd3.Parameters.AddWithValue("@AccountBalance", sum);
-                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
-
-
-                var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
-
-                decimal amount1 = System.Convert.ToDecimal(TextBox7.Text);
-                SqlCommand cmd2 = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
-
-                cmd2.Parameters.AddWithValue("@TransactionType", transactionType);
-                cmd2.Parameters.AddWithValue("@DateTime", DateTime.Now);
-                cmd2.Parameters.AddWithValue("@Amount", amount1);
-                cmd2.Parameters.AddWithValue("@AccountNumber", TextBox1.Text.Trim());
-
-                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-
-
-
-
-
-
                 Response.Write("<script>alert('Transfered done');</script>");
-                cmd3.ExecuteNonQuery();
-                cmd1.ExecuteNonQuery();
-                cmd2.ExecuteNonQuery();
+                ExecuteTransfer(con, TextBox1.Text.Trim(), difference, TextBox6.Text.Trim(), sum, amount, TextBox1.Text.Trim());
                 con.Close();
 
                 Response.Write("<script>alert('Details Updated');</script>");
@@ -277,24 +151,14 @@ namespace OnlineBankingAzure
 
 
 
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE AccountNumber=@AccountNumber;", con);
-                cmd.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-                if (dt.Rows.Count == 0)
+                decimal destinationBalance;
+                if (!TryGetAccountBalanceByAccountNumber(con, TextBox6.Text.Trim(), out destinationBalance))
                 {
                     Response.Write("<script>alert('Destination account not found.');</script>");
                     return;
                 }
-
-                var iFirstVal1 = "";
-                iFirstVal1 = dt.Rows[0]["AccountBalance"].ToString();
-
-                decimal decimalVal1 = 0;
-                decimalVal1 = System.Convert.ToDecimal(iFirstVal1);
                 decimal amount1 = System.Convert.ToDecimal(TextBox7.Text);
-                decimal sum1 = decimalVal1 + amount1;
+                decimal sum1 = destinationBalance + amount1;
 
 
 
@@ -304,39 +168,8 @@ namespace OnlineBankingAzure
                 decimal difference1 = value1 - amount1;
 
 
-                SqlCommand cmd1 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
-                cmd1.Parameters.AddWithValue("@AccountBalance", difference1);
-                cmd1.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
-
-
-
-
-                SqlCommand cmd3 = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
-                cmd3.Parameters.AddWithValue("@AccountBalance", sum1);
-                cmd3.Parameters.AddWithValue("@AccountNumber", TextBox6.Text.Trim());
-
-
-                var transactionType = "Transfer to Account Number:" + TextBox6.Text.Trim();
-
-                decimal amount2 = System.Convert.ToDecimal(TextBox7.Text);
-                SqlCommand cmd2 = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
-
-                cmd2.Parameters.AddWithValue("@TransactionType", transactionType);
-                cmd2.Parameters.AddWithValue("@DateTime", DateTime.Now);
-                cmd2.Parameters.AddWithValue("@Amount", amount2);
-                cmd2.Parameters.AddWithValue("@AccountNumber", TextBox2.Text.Trim());
-
-                cmd2.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-
-
-
-
-
-
                 Response.Write("<script>alert('Transfered done');</script>");
-                cmd3.ExecuteNonQuery();
-                cmd1.ExecuteNonQuery();
-                cmd2.ExecuteNonQuery();
+                ExecuteTransfer(con, TextBox2.Text.Trim(), difference1, TextBox6.Text.Trim(), sum1, amount1, TextBox2.Text.Trim());
                 con.Close();
 
                 Response.Write("<script>alert('Details Updated');</script>");
@@ -366,36 +199,7 @@ namespace OnlineBankingAzure
 
         void getChequingAccountData()
         {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-
-                var Chequing = "Chequing";
-
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd.Parameters.AddWithValue("@AccountType", Chequing);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-
-
-                TextBox1.Text = dt.Rows[0]["AccountNumber"].ToString();
-                TextBox3.Text = dt.Rows[0]["AccountBalance"].ToString();
-
-
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-
-            }
+            LoadAccountData("Chequing", TextBox1, TextBox3);
         }
 
 
@@ -403,36 +207,7 @@ namespace OnlineBankingAzure
 
         void getSavingsAccountData()
         {
-            try
-            {
-                SqlConnection con = new SqlConnection(strcon);
-                if (con.State == ConnectionState.Closed)
-                {
-                    con.Open();
-                }
-                var Savings = "Savings";
-
-
-                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
-                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
-                cmd.Parameters.AddWithValue("@AccountType", Savings);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                DataTable dt = new DataTable();
-                da.Fill(dt);
-
-
-
-                TextBox2.Text = dt.Rows[0]["AccountNumber"].ToString();
-                TextBox4.Text = dt.Rows[0]["AccountBalance"].ToString();
-
-
-
-            }
-            catch (Exception ex)
-            {
-                Response.Write("<script>alert('" + ex.Message + "');</script>");
-
-            }
+            LoadAccountData("Savings", TextBox2, TextBox4);
         }
 
         bool IsUserAuthenticated()
@@ -453,6 +228,72 @@ namespace OnlineBankingAzure
         bool IsValidAccountNumber(string accountNumber)
         {
             return !string.IsNullOrWhiteSpace(accountNumber) && AccountNumberRegex.IsMatch(accountNumber);
+        }
+
+        bool TryGetAccountBalanceByAccountNumber(SqlConnection con, string accountNumber, out decimal accountBalance)
+        {
+            accountBalance = 0;
+            SqlCommand cmd = new SqlCommand("SELECT AccountBalance from Account WHERE AccountNumber=@AccountNumber;", con);
+            cmd.Parameters.AddWithValue("@AccountNumber", accountNumber);
+            SqlDataAdapter da = new SqlDataAdapter(cmd);
+            DataTable dt = new DataTable();
+            da.Fill(dt);
+            if (dt.Rows.Count == 0)
+            {
+                return false;
+            }
+
+            return decimal.TryParse(dt.Rows[0]["AccountBalance"].ToString(), out accountBalance);
+        }
+
+        void ExecuteTransfer(SqlConnection con, string sourceAccountNumber, decimal sourceAccountBalance, string destinationAccountNumber, decimal destinationAccountBalance, decimal amount, string transactionAccountNumber)
+        {
+            SqlCommand updateSource = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
+            updateSource.Parameters.AddWithValue("@AccountBalance", sourceAccountBalance);
+            updateSource.Parameters.AddWithValue("@AccountNumber", sourceAccountNumber);
+
+            SqlCommand updateDestination = new SqlCommand("update Account set AccountBalance=@AccountBalance WHERE AccountNumber=@AccountNumber;", con);
+            updateDestination.Parameters.AddWithValue("@AccountBalance", destinationAccountBalance);
+            updateDestination.Parameters.AddWithValue("@AccountNumber", destinationAccountNumber);
+
+            SqlCommand recordTransfer = new SqlCommand("INSERT INTO transaction_record(TransactionType,DateTime,Amount,AccountNumber,UserID) values(@TransactionType,@DateTime,@Amount,@AccountNumber,@UserID)", con);
+            recordTransfer.Parameters.AddWithValue("@TransactionType", "Transfer to Account Number:" + destinationAccountNumber);
+            recordTransfer.Parameters.AddWithValue("@DateTime", DateTime.Now);
+            recordTransfer.Parameters.AddWithValue("@Amount", amount);
+            recordTransfer.Parameters.AddWithValue("@AccountNumber", transactionAccountNumber);
+            recordTransfer.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+
+            updateDestination.ExecuteNonQuery();
+            updateSource.ExecuteNonQuery();
+            recordTransfer.ExecuteNonQuery();
+        }
+
+        void LoadAccountData(string accountType, TextBox accountNumberTextBox, TextBox accountBalanceTextBox)
+        {
+            try
+            {
+                SqlConnection con = new SqlConnection(strcon);
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+
+                SqlCommand cmd = new SqlCommand("SELECT * from Account WHERE UserID=@UserID AND AccountType=@AccountType;", con);
+                cmd.Parameters.AddWithValue("@UserID", Session["Username"].ToString());
+                cmd.Parameters.AddWithValue("@AccountType", accountType);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                accountNumberTextBox.Text = dt.Rows[0]["AccountNumber"].ToString();
+                accountBalanceTextBox.Text = dt.Rows[0]["AccountBalance"].ToString();
+
+            }
+            catch (Exception ex)
+            {
+                Response.Write("<script>alert('" + ex.Message + "');</script>");
+
+            }
         }
     }
 }
